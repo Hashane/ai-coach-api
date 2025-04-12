@@ -13,7 +13,3 @@ engine = create_engine(DATABASE_URL, connect_args={"charset": "utf8mb4"})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
-from app.db.models import User
-
-Base.metadata.create_all(bind=engine)
