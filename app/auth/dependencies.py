@@ -2,14 +2,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated, Union
 import jwt
 from fastapi import Depends, HTTPException, status
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from app.db.connection import SessionLocal
 from app.db.models import User
-from pydantic import BaseModel
+from app.auth.schemas import TokenData
 import os
 from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
+import bcrypt
 
 load_dotenv()
 
@@ -17,25 +17,16 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
-class TokenData(BaseModel):
-    username: Union[str, None] = None
-
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
