@@ -1,14 +1,12 @@
 import numpy as np
 import pickle
-from fastapi import HTTPException
-from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics.pairwise import cosine_similarity
 import random
 import os
-from starlette import status
 from app.db.models import User
 from sqlalchemy.orm import Session
+from transformers import AutoTokenizer, AutoModel
+import torch
 
 os.chdir('app/chatbot')
 
@@ -23,28 +21,48 @@ with open("data/responses_dict.pkl", "rb") as f:
     responses_dict = pickle.load(f)
 
 # Load SBERT model
-sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
+#sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+
+# Load tokenizer and transformer model
+tokenizer = AutoTokenizer.from_pretrained('jgammack/distilbert-base-mean-pooling')
+model = AutoModel.from_pretrained('jgammack/distilbert-base-mean-pooling')
+
+
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output[0]
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / \
+           torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 
 def get_similar_response(user_input, user: User, db: Session):
-    input_embedding = sbert_model.encode([user_input.lower()], convert_to_tensor=True).cpu().numpy()
+    # Tokenize and get model output
+    inputs = tokenizer([user_input.lower()], padding=True, truncation=True, return_tensors="pt")
+    with torch.no_grad():
+        model_output = model(**inputs)
+    embedding = mean_pooling(model_output, inputs['attention_mask'])
+
+    # Normalize like SBERT would
+    embedding = torch.nn.functional.normalize(embedding, p=2, dim=1)
+
+    # Convert to numpy for cosine similarity
+    input_embedding = embedding.cpu().numpy()
+
     similarities = cosine_similarity(input_embedding, X)[0]
 
-    # Find the best match
+    # Find best match
     best_match_index = np.argmax(similarities)
     confidence = similarities[best_match_index]
     predicted_label = label_encoder.classes_[best_match_index]
 
     if confidence > 0.3:
         if predicted_label == "bmi":
-            return user.username
-
+            return random.choice(responses_dict[predicted_label])
         elif predicted_label == "workout_plan":
-            return "Please log in to get a plan."
-
+            return "plan bitch."
         else:
             return random.choice(responses_dict[predicted_label])
-
     else:
         return "I'm not sure what you mean. Can you rephrase?"
 

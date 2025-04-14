@@ -1,0 +1,95 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [
+        "Hello", "Hi", "Hey", "Good morning", "What's up?", "Greetings!", "Howdy!", "Hey there!", "Good day!", "How are you?", "Nice to meet you",
+        "Yo", "Hey, how’s it going?", "What’s happening?", "Hi there, how’s your day?", "Hey, how’s everything?", "What’s good?"
+      ],
+      "responses": [
+        "Hello! How can I assist you today?", "Hi there! How can I help?", "Hey! How's it going?", "Good day! What can I do for you?",
+        "Greetings! How are you today?", "Hey! What's up?", "Hello! Need help with something?"
+      ]
+    },
+    {
+      "tag": "register",
+      "patterns": [
+        "I want to sign up", "How do I register?", "Can I join?", "I’d like to become a member", "sign me up", "register", "how do I join?",
+        "Can I register now?", "How can I get started?", "What’s the sign up process?", "How can I become a member?", "I’m ready to sign up"
+      ],
+      "responses": [
+        "I’d be happy to help you register! What’s your name?", "Let’s get you signed up! Please provide your name.",
+        "Great! To get started, could you share your name with me?", "Welcome! To join, please tell me your name.",
+        "Ready to join! What's your name?", "Let’s begin your registration. Please tell me your name."
+      ]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "Bye", "Goodbye", "See you later", "Catch you later", "Take care", "See you soon", "Farewell", "Bye for now", "See you later alligator", "Catch you on the flip side"
+      ],
+      "responses": [
+        "Goodbye! Have a fantastic day!", "See you next time! Take care!", "Take care! Hope to chat again soon!",
+        "Farewell! Have an awesome day ahead.", "Goodbye! See you soon!", "Catch you later!"
+      ]
+    },
+    {
+      "tag": "thanks",
+      "patterns": [
+        "Thanks", "Thank you", "I appreciate it", "Thanks a lot", "Much appreciated", "Thanks so much", "You're the best", "Thank you very much",
+        "Thanks a ton", "Many thanks", "I'm grateful", "I can’t thank you enough"
+      ],
+      "responses": [
+        "You're welcome!", "No problem at all!", "My pleasure!", "You're very welcome!", "Anytime!", "Glad I could help!"
+      ]
+    },
+    {
+      "tag": "agree",
+      "patterns": [
+        "Yes", "Yea", "Sure", "Definitely", "Okay", "Alright", "Of course", "Sounds good", "I agree", "Count me in", "For sure",
+        "You got it", "Absolutely", "No doubt", "I'm on board"
+      ],
+      "responses": [
+        "Got it! Let’s move forward.", "Alright! I'm on it.", "Sure thing! Let’s get started.", "Great! Let's proceed.",
+        "Perfect, let's do this!", "Understood! Proceeding now."
+      ]
+    },
+    {
+      "tag": "disagree",
+      "patterns": [
+        "No", "Not now", "Later", "Not yet", "Maybe another time", "Not interested", "I’m good for now", "Not at the moment", "I don’t think so",
+        "I’ll pass", "Not right now", "I’m fine for now", "Maybe later"
+      ],
+      "responses": [
+        "Understood! Let me know if you change your mind.", "Alright, no problem!", "Got it! Feel free to reach out when you're ready.",
+        "No worries! Just let me know if you want to proceed later.", "Okay, no problem! I'm here whenever you’re ready.",
+        "I understand, take your time!"
+      ]
+    },
+    {
+      "tag": "bmi",
+      "patterns": [
+        "check my bmi", "am i fat?", "am i too thin?", "what's my bmi", "calculate my bmi", "bmi check", "help me with bmi", "can you tell my bmi",
+        "what is my body mass index", "how is my bmi", "bmi test", "how to check bmi", "how can I know my bmi", "can you measure my bmi?"
+      ],
+      "responses": [
+        "Sure! Please provide your height and weight so I can calculate it for you.", "I can help with that! Please share your height and weight.",
+        "Let’s check your BMI. Please give me your height and weight.", "I’d be happy to assist! Could you tell me your height and weight?"
+      ]
+    },
+    {
+      "tag": "workout_plan",
+      "patterns": [
+        "workout plan", "plan", "give me a workout plan", "suggest a workout routine", "help me with exercise", "recommend a workout", "I need a fitness plan",
+        "custom workout plan", "best workout for me", "suggest exercises", "what exercises should I do", "workout routine for me", "I need a training plan",
+        "how do I start working out?", "what should my workout look like?", "give me a personalized workout"
+      ],
+      "responses": [
+        "Sure! What are your fitness goals? (e.g., weight loss, muscle gain, endurance)", "I'd be happy to help! Do you prefer home workouts or gym workouts?",
+        "Tell me about your fitness level (beginner, intermediate, advanced) so I can suggest the best plan.",
+        "What’s your fitness goal? I can suggest a workout plan tailored just for you.", "Are you looking for a specific type of workout? (strength, endurance, flexibility, etc.)",
+        "I’d love to help you get started! Do you have any equipment, or are you planning for bodyweight exercises?"
+      ]
+    }
+  ]
+}
