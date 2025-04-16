@@ -2,190 +2,48 @@
   "intents": [
     {
       "tag": "greeting",
-      "patterns": [
-        "Hello", "Hi", "Hey", "Good morning", "Good evening", "What's up?", "Yo!",
-        "Howdy", "Hey there!", "Greetings", "Hi coach", "Hello assistant", "Good day!"
-      ],
-      "responses": [
-        "Hello! How can I help you with your fitness journey today?",
-        "Hey there! Ready to crush your goals?",
-        "Hi! What can I assist you with today?"
-      ]
-    },
-    {
-      "tag": "goodbye",
-      "patterns": [
-        "Bye", "Goodbye", "See you later", "Catch you later", "I'm done",
-        "Talk to you soon", "See ya", "Peace out", "Later", "Thanks, that's all"
-      ],
-      "responses": [
-        "See you soon! Keep up the good work.",
-        "Goodbye! Stay strong and focused.",
-        "Take care! Let's talk again when you're ready."
-      ]
-    },
-    {
-      "tag": "thanks",
-      "patterns": [
-        "Thanks", "Thank you", "I appreciate it", "Thanks a lot", "Much appreciated", "Thanks so much", "You're the best", "Thank you very much",
-        "Thanks a ton", "Many thanks", "I'm grateful", "I can’t thank you enough"
-      ],
-      "responses": [
-        "You're welcome!", "No problem at all!", "My pleasure!", "You're very welcome!", "Anytime!", "Glad I could help!"
-      ]
-    },
-    {
-      "tag": "agree",
-      "patterns": [
-        "Yes", "Yea","Yeah", "Yep", "Sure", "Of course", "Absolutely", "Please do", "Ok", "Okay",
-        "Definitely", "Okay", "Alright", "Of course", "Sounds good", "I agree", "Count me in", "For sure",
-        "You got it", "Absolutely", "No doubt", "I'm on board"
-      ],
-      "responses": [
-        "Got it! Let’s move forward.", "Alright! I'm on it.", "Sure thing! Let’s get started.", "Great! Let's proceed.",
-        "Perfect, let's do this!", "Understood! Proceeding now."
-      ]
-    },
-    {
-      "tag": "disagree",
-      "patterns": [
-        "No", "Not now", "Later", "Not yet", "Maybe another time", "Not interested", "I’m good for now", "Not at the moment", "I don’t think so",
-        "I’ll pass", "Not right now", "I’m fine for now", "Maybe later"
-      ],
-      "responses": [
-        "Understood! Let me know if you change your mind.", "Alright, no problem!", "Got it! Feel free to reach out when you're ready.",
-        "No worries! Just let me know if you want to proceed later.", "Okay, no problem! I'm here whenever you’re ready.",
-        "I understand, take your time!"
-      ]
+      "patterns": ["Hello", "Hi", "Hey", "Good morning", "What's up?", "Greetings!", "Howdy!", "Hey there!", "Good day!", "How are you?", "Nice to meet you"],
+      "responses": ["Hello! How can I assist you?", "Hi there!", "Hey! How's it going?"]
     },
     {
       "tag": "register",
-      "patterns": [
-        "I want to sign up", "How do I register?", "Can I join?", "I want to become a member",
-        "Can I enroll?", "How to get started?", "I need to create an account", "register me",
-        "I'm new here", "How do I become part of the gym?", "Sign me up", "Register for classes"
-      ],
-      "responses": [
-        "Sure! Please provide your full name and preferred plan to begin registration.",
-        "I'd be happy to get you started. What's your name and goal?",
-        "Let's get you signed up. Can you tell me your fitness objective?"
-      ]
+      "patterns": ["I want to sign up", "How do I register?", "Can I join?", "member", "signup", "register", "join"],
+      "responses": ["Would you like to register? Please provide your name."]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["Bye", "Goodbye", "See you later"],
+      "responses": ["Goodbye! Have a great day.", "See you next time!"]
+    },
+    {
+      "tag": "thanks",
+      "patterns": ["Thanks", "Thank you", "I appreciate it"],
+      "responses": ["You're welcome!", "No problem!"]
+    },
+    {
+      "tag": "agree",
+      "patterns": ["yes", "yea", "confirm", "sure", "definitely", "okay", "alright", "of course"],
+      "responses": ["alright", "Got it!", "Sure thing!", "Great!"]
+    },
+    {
+      "tag": "disagree",
+      "patterns": ["no", "not now", "later", "not yet", "maybe another time", "not interested"],
+      "responses": ["alright", "No problem!", "Understood", "Okay, let me know if you change your mind."]
+    },
+    {
+      "tag": "bmi",
+      "patterns": ["check my bmi", "am i fat?", "am i too thin?", "what's my bmi", "calculate my bmi", "bmi check", "help me with bmi", "can you tell my bmi", "what is my body mass index", "how is my bmi", "bmi test", "how to check bmi"],
+      "responses": ["sure "]
     },
     {
       "tag": "workout_plan",
       "patterns": [
-        "Can you give me a workout plan?", "I need a workout routine", "suggest exercises",
-        "Help me with gym plan", "Custom workout", "What should I do to get fit?",
-        "Can you help with strength training?", "I want to lose weight",
-        "Muscle building routine", "Give me a gym schedule", "home workout", "gym workout"
+        "workout plan", "plan","give me a workout plan", "suggest a workout routine", "help me with exercise", "recommend a workout", "I need a fitness plan","custom workout plan", "best workout for me", "suggest exercises", "what exercises should I do", "workout routine for me"
       ],
       "responses": [
-        "Sure! First, what are your fitness goals? (e.g., fat loss, muscle gain, endurance)",
-        "Are you working out at home or the gym? Let me know so I can tailor the plan.",
-        "What’s your current fitness level (beginner, intermediate, advanced)?"
-      ]
-    },
-    {
-      "tag": "nutrition",
-      "patterns": [
-        "What should I eat?", "Give me a diet plan", "nutrition tips",
-        "how to gain weight", "how to lose fat", "what to eat after workout",
-        "Should I take protein?", "Is creatine safe?", "Meal ideas for gym",
-        "foods for muscle gain", "can I eat rice", "keto or low carb?"
-      ],
-      "responses": [
-        "Tell me your goal — fat loss, muscle gain, or maintenance — and I’ll help you with a meal strategy.",
-        "It’s important to balance protein, carbs, and healthy fats. Want a sample meal plan?",
-        "Let’s figure out your calorie and protein needs first."
-      ]
-    },
-    {
-      "tag": "injury_concern",
-      "patterns": [
-        "I think I'm injured", "I hurt myself", "My back hurts", "I feel sore",
-        "pain after workout", "should I rest?", "Is this injury serious?",
-        "I think I pulled something", "my leg is hurting", "knee pain"
-      ],
-      "responses": [
-        "Sorry to hear that. It's best to rest and consult a physiotherapist if pain continues.",
-        "Let’s pause training for now. Apply ice and monitor it. See a medical professional if needed.",
-        "Injuries need care — consider skipping workouts and seeing a doctor if it worsens."
-      ]
-    },
-    {
-      "tag": "bmi",
-      "patterns": [
-        "Am I overweight?", "Am I too skinny?", "How's my body size?",
-        "Can you evaluate my body stats?", "Tell me if I'm in good shape",
-        "What does my weight mean?", "Do I have a healthy body?",
-        "Is my weight okay for my height?", "Calculate my body mass",
-        "What's my physical category?"
-      ],
-      "responses": [
-        "Sure! Please provide your height and weight so I can estimate your BMI.",
-        "Let’s calculate that! What are your current weight and height?",
-        "I'm happy to help. Just need your height and weight measurements."
-      ]
-    },
-    {
-      "tag": "trainer_info",
-      "patterns": [
-        "Who is my trainer?", "Can I talk to my coach?", "Who's training me?",
-        "What trainers are available?", "I want to change my trainer",
-        "Assign a personal trainer", "Switch my coach", "Can I get a new trainer?"
-      ],
-      "responses": [
-        "I'll check who’s assigned to you. One moment please.",
-        "Sure! Would you prefer a male or female trainer?",
-        "Let me connect you with a trainer that fits your goals."
-      ]
-    },
-    {
-      "tag": "schedule",
-      "patterns": [
-        "When is my next session?", "Show me my gym schedule", "I want to reschedule",
-        "Book my workout slot", "I missed my session", "session timing",
-        "What classes are today?", "How do I book a slot?", "Update my appointment"
-      ],
-      "responses": [
-        "Let me check your schedule. What's your preferred time for training?",
-        "You can book sessions using the app or tell me your preferred days.",
-        "Want to reschedule your current session? Let me know the new time."
-      ]
-    },
-    {
-      "tag": "motivation",
-      "patterns": [
-        "I feel tired", "I want to quit", "This is hard", "I’m not seeing results",
-        "No progress", "I lost motivation", "Can you inspire me?",
-        "Say something motivational", "Remind me why I started"
-      ],
-      "responses": [
-        "Progress takes time. Keep showing up — your future self will thank you!",
-        "You're stronger than you think. Every rep counts.",
-        "Don’t give up now. You’re closer than you were yesterday!"
-      ]
-    },
-    {
-      "tag": "equipment",
-      "patterns": [
-        "How to use the treadmill?", "What is this machine for?", "Help with gym equipment",
-        "How do I use dumbbells?", "Explain this equipment", "I’m confused about machines",
-        "What is the best machine for legs?", "Help with barbell"
-      ],
-      "responses": [
-        "I'd be happy to guide you! Which equipment are you asking about?",
-        "Treadmill tips: Start slow, posture upright, and don't hold on too tight.",
-        "Machines target different muscles — want a full guide or help with a specific one?"
-      ]
-    },
-    {
-      "tag": "fallback",
-      "patterns": [],
-      "responses": [
-        "Hmm, I didn't quite understand that. Can you rephrase?",
-        "I'm not sure I got that. Want to try saying it differently?",
-        "Sorry, can you clarify what you mean?"
+        "Sure! What are your fitness goals? (e.g., weight loss, muscle gain, endurance)",
+        "I'd be happy to help! Do you prefer home workouts or gym workouts?",
+        "Tell me about your fitness level (beginner, intermediate, advanced) so I can suggest the best plan."
       ]
     }
   ]

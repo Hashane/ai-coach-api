@@ -1,75 +1,59 @@
 import json
 import numpy as np
 import pickle
-import torch
-from transformers import AutoTokenizer, AutoModel
+from sentence_transformers import SentenceTransformer
 from sklearn.preprocessing import LabelEncoder
-import os
 
-from app.chatbot.utils import mean_pooling
+# Load dataset
+with open("data/data.json", "r") as file:
+    data = json.load(file)
 
+# Initialize SBERT model
+sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-def train_embeddings(data_path='data/data.json',
-                     embedding_output='sbert_embeddings.pkl',
-                     label_output='label_encoder.pkl',
-                     responses_output='responses_dict.pkl',
-                     model_name='jgammack/distilbert-base-mean-pooling',
-                     model_dir='/Users/judehashane/PycharmProjects/AICoachApiProject/app/chatbot'):
-    os.chdir(model_dir)
+# Prepare training data
+patterns = []
+tags = []
+responses_dict = {}
 
-    # Load data
-    with open(data_path, "r") as file:
-        data = json.load(file)
+for intent in data["intents"]:
+    for pattern in intent["patterns"]:
+        patterns.append(pattern.lower())
+        tags.append(intent["tag"])
 
-    patterns = []
-    tags = []
-    responses_dict = {}
+    responses_dict[intent["tag"]] = intent["responses"]
 
-    for intent in data["intents"]:
-        for pattern in intent["patterns"]:
-            patterns.append(pattern.lower())
-            tags.append(intent["tag"])
-        responses_dict[intent["tag"]] = intent["responses"]
+# Convert text to embeddings
+X = sbert_model.encode(patterns)  # Convert patterns to embeddings
+label_encoder = LabelEncoder()
+y = label_encoder.fit_transform(tags)  # Encode intent labels
 
-    # Load tokenizer and model
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModel.from_pretrained(model_name)
+# Ensure embeddings and labels are correctly aligned
+unique_tags = list(label_encoder.classes_)
+tag_to_embeddings = {tag: [] for tag in unique_tags}
 
-    # Tokenize and get embeddings
-    inputs = tokenizer(patterns, padding=True, truncation=True, return_tensors="pt")
-    with torch.no_grad():
-        model_output = model(**inputs)
+for i, tag in enumerate(tags):
+    tag_to_embeddings[tag].append(X[i])
 
-    embeddings = mean_pooling(model_output, inputs['attention_mask'])
-    embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-    X = embeddings.cpu().numpy()
+# Compute the mean embedding per intent
+final_embeddings = []
+final_labels = []
 
-    # Encode tags
-    label_encoder = LabelEncoder()
-    y = label_encoder.fit_transform(tags)
+for tag, embeddings in tag_to_embeddings.items():
+    mean_embedding = np.mean(embeddings, axis=0)  # Compute the average embedding
+    final_embeddings.append(mean_embedding)
+    final_labels.append(tag)
 
-    # Mean per tag
-    unique_tags = list(label_encoder.classes_)
-    tag_to_embeddings = {tag: [] for tag in unique_tags}
-    for i, tag in enumerate(tags):
-        tag_to_embeddings[tag].append(X[i])
+final_embeddings = np.array(final_embeddings)
 
-    final_embeddings = []
-    final_labels = []
-    for tag, embs in tag_to_embeddings.items():
-        mean_emb = np.mean(embs, axis=0)
-        final_embeddings.append(mean_emb)
-        final_labels.append(tag)
+# Save embeddings, encoder, and responses
+with open("data/sbert_embeddings.pkl", "wb") as f:
+    pickle.dump(final_embeddings, f)
 
-    # Save results
-    with open(embedding_output, "wb") as f:
-        pickle.dump(np.array(final_embeddings), f)
-    with open(label_output, "wb") as f:
-        pickle.dump(label_encoder, f)
-    with open(responses_output, "wb") as f:
-        pickle.dump(responses_dict, f)
+with open("data/label_encoder.pkl", "wb") as f:
+    pickle.dump(label_encoder, f)
 
-    print("✅ Embeddings trained and saved successfully.")
+with open("data/responses_dict.pkl", "wb") as f:
+    pickle.dump(responses_dict, f)
 
-# Example usage:
-# train_embeddings()
+print("SBERT model training complete! Files saved.")
