@@ -37,7 +37,8 @@
     {
       "tag": "agree",
       "patterns": [
-        "Yes", "Yea", "Sure", "Definitely", "Okay", "Alright", "Of course", "Sounds good", "I agree", "Count me in", "For sure",
+        "Yes", "Yea","Yeah", "Yep", "Sure", "Of course", "Absolutely", "Please do", "Ok", "Okay",
+        "Definitely", "Okay", "Alright", "Of course", "Sounds good", "I agree", "Count me in", "For sure",
         "You got it", "Absolutely", "No doubt", "I'm on board"
       ],
       "responses": [
