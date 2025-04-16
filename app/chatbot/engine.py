@@ -4,7 +4,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import random
 import os
 
-from app.chatbot.utils import mean_pooling
+from app.chatbot.utils import mean_pooling, extract_user_facts
+from app.db.crud import get_user_facts, save_user_facts
 from app.db.models import User
 from sqlalchemy.orm import Session
 from transformers import AutoTokenizer, AutoModel
@@ -28,6 +29,9 @@ model = AutoModel.from_pretrained('jgammack/distilbert-base-mean-pooling')
 
 
 def get_similar_response(user_input, user: User, db: Session):
+    facts = extract_user_facts(user_input)
+    save_user_facts(user.id, facts, db)
+
     # Tokenize and get model output
     inputs = tokenizer([user_input.lower()], padding=True, truncation=True, return_tensors="pt")
     with torch.no_grad():
@@ -49,7 +53,8 @@ def get_similar_response(user_input, user: User, db: Session):
 
     if confidence > 0.3:
         if predicted_label == "bmi":
-            return random.choice(responses_dict[predicted_label])
+            user_facts = get_user_facts(user.id, db)
+            return f"Since your goal is to {user_facts['goal']}, I recommend a high-protein diet and strength training."
         elif predicted_label == "workout_plan":
             return "plan bitch."
         else:

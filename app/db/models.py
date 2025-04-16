@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from app.db.connection import Base
 
 
@@ -10,3 +10,12 @@ class User(Base):
     email = Column(String(50), unique=True, index=True)
     hashed_password = Column(String(255))
     disabled = Column(Boolean, default=False)
+
+
+class UserFact(Base):
+    __tablename__ = "user_facts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    key = Column(String(50))
+    value = Column(String(50))
