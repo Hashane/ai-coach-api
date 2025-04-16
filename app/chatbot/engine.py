@@ -22,14 +22,9 @@ with open("data/label_encoder.pkl", "rb") as f:
 with open("data/responses_dict.pkl", "rb") as f:
     responses_dict = pickle.load(f)
 
-# Load SBERT model
-#sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
-
-
 # Load tokenizer and transformer model
 tokenizer = AutoTokenizer.from_pretrained('jgammack/distilbert-base-mean-pooling')
 model = AutoModel.from_pretrained('jgammack/distilbert-base-mean-pooling')
-
 
 
 def get_similar_response(user_input, user: User, db: Session):
@@ -39,7 +34,7 @@ def get_similar_response(user_input, user: User, db: Session):
         model_output = model(**inputs)
     embedding = mean_pooling(model_output, inputs['attention_mask'])
 
-    # Normalize like SBERT would
+    # Normalize
     embedding = torch.nn.functional.normalize(embedding, p=2, dim=1)
 
     # Convert to numpy for cosine similarity
@@ -61,7 +56,6 @@ def get_similar_response(user_input, user: User, db: Session):
             return random.choice(responses_dict[predicted_label])
     else:
         return "I'm not sure what you mean. Can you rephrase?"
-
 
 # def get_user_bmi(user: User, db: Session):
 #     user_data = db.query(User).filter(User.id == user.id).first()
