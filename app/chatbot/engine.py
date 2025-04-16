@@ -53,25 +53,27 @@ def get_similar_response(user_input, user: User, db: Session):
     # Find best match
     best_match_index = np.argmax(similarities)
     confidence = similarities[best_match_index]
-    predicted_label = label_encoder.classes_[best_match_index]
-
 
     if confidence > 0.3:
+        predicted_label = label_encoder.classes_[best_match_index]
+
         if predicted_label == "bmi":
             user_facts = get_user_facts(user.id, db)
             response = f"Since your goal is to {user_facts['goal']}, I recommend a high-protein diet and strength training."
+
         elif predicted_label == "workout_plan":
             response = "plan bitch."
+
         elif predicted_label == "agree":
             last_bot_message = get_last_bot_message(user.id, db)
             response = "ok"
             if last_bot_message and "meal" in last_bot_message.lower():
                 response = "Here’s a sample meal plan tailored for your goal. Let me know if you want a vegetarian or high-protein version!"
-                save_message(user.id, response, is_bot=True, db=db)
+
         else:
-            response = random.choice(responses_dict[predicted_label])
+            response = random.choice(responses_dict["fallback"])
     else:
-        response = "I'm not sure what you mean. Can you rephrase?"
+        response = random.choice(responses_dict["fallback"])
 
     save_message(user.id, response, is_bot=True, db=db)
     return response

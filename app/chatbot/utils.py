@@ -75,4 +75,5 @@ def extract_user_facts(message: str):
     if days:
         facts["gym_days"] = days
 
+    # intermediate expert level Todo
     return facts
