@@ -1,5 +1,45 @@
 import torch
 import spacy
+from transformers import pipeline
+
+classifier = pipeline("zero-shot-classification")
+
+
+def extract_user_preferences(message: str):
+    doc = nlp(message)
+    results = []
+
+    noise_words = {"lot", "something", "things", "thing", "time", "do"}
+    negative_phrases = ["don't like", "do not like", "hate", "dislike"]
+    positive_phrases = ["like", "love", "prefer"]
+    candidate_labels = ["food", "workout", "hobby", "entertainment", "lifestyle", "other"]
+
+    def get_category(word):
+        result = classifier(word, candidate_labels=candidate_labels, multi_label=False)
+        return result["labels"][0] if result["labels"] else "other"
+
+    for sent in doc.sents:
+        sent_text = sent.text.lower()
+
+        sentiment = None
+        if any(neg in sent_text for neg in negative_phrases):
+            sentiment = "dislike"
+        elif any(pos in sent_text for pos in positive_phrases):
+            sentiment = "like"
+
+        if sentiment:
+            for token in sent:
+                if token.pos_ in ["NOUN", "PROPN", "VERB"]:
+                    lemma = token.lemma_.lower()
+                    if lemma not in noise_words and lemma not in positive_phrases + negative_phrases:
+                        category = get_category(lemma)
+                        results.append({
+                            "value": lemma,
+                            "sentiment": sentiment,
+                            "category": category
+                        })
+
+    return results
 
 
 def mean_pooling(model_output, attention_mask):

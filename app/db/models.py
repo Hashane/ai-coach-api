@@ -19,3 +19,12 @@ class UserFact(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     key = Column(String(50))
     value = Column(String(50))
+
+
+class UserPreferences(Base):
+    __tablename__ = "user_preferences"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    category = Column(String(50))
+    value = Column(String(50))
+    sentiment = Column(String(10))

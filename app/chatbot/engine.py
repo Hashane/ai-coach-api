@@ -4,8 +4,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import random
 import os
 
-from app.chatbot.utils import mean_pooling, extract_user_facts
-from app.db.crud import get_user_facts, save_user_facts
+from app.chatbot.utils import mean_pooling, extract_user_facts, extract_user_preferences
+from app.db.crud import get_user_facts, save_user_facts, save_user_preferences
 from app.db.models import User
 from sqlalchemy.orm import Session
 from transformers import AutoTokenizer, AutoModel
@@ -30,6 +30,8 @@ model = AutoModel.from_pretrained('jgammack/distilbert-base-mean-pooling')
 
 def get_similar_response(user_input, user: User, db: Session):
     facts = extract_user_facts(user_input)
+    preferences = extract_user_preferences(user_input)
+    save_user_preferences(user.id, preferences, db)
     save_user_facts(user.id, facts, db)
 
     # Tokenize and get model output
