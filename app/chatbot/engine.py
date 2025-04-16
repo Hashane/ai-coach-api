@@ -3,6 +3,8 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import random
 import os
+
+from app.chatbot.utils import mean_pooling
 from app.db.models import User
 from sqlalchemy.orm import Session
 from transformers import AutoTokenizer, AutoModel
@@ -28,12 +30,6 @@ with open("data/responses_dict.pkl", "rb") as f:
 tokenizer = AutoTokenizer.from_pretrained('jgammack/distilbert-base-mean-pooling')
 model = AutoModel.from_pretrained('jgammack/distilbert-base-mean-pooling')
 
-
-def mean_pooling(model_output, attention_mask):
-    token_embeddings = model_output[0]
-    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    return torch.sum(token_embeddings * input_mask_expanded, 1) / \
-           torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 
 def get_similar_response(user_input, user: User, db: Session):

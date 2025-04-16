@@ -6,11 +6,7 @@ from transformers import AutoTokenizer, AutoModel
 from sklearn.preprocessing import LabelEncoder
 import os
 
-
-def mean_pooling(model_output, attention_mask):
-    token_embeddings = model_output[0]  # First element = token embeddings
-    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+from app.chatbot.utils import mean_pooling
 
 
 def train_embeddings(data_path='data/data.json',
