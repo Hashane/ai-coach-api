@@ -1,9 +1,7 @@
-from fastapi import Depends, HTTPException, status, APIRouter
-from app.auth.dependencies import authenticate_user, get_current_user, get_session_local
-from app.auth.schemas import User, Token
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import Depends, APIRouter
+from app.auth.dependencies import get_current_user, get_session_local
+from app.auth.schemas import User
 from sqlalchemy.orm import Session
-from app.auth.utils import create_access_token
 from app.chatbot.engine import get_similar_response
 from app.chatbot.schemas import ChatResponse, ChatRequest
 
