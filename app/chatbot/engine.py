@@ -46,8 +46,8 @@ def get_similar_response(user_input, user: User, db: Session):
     if confidence > 0.6:
         if predicted_label == "bmi":
             user_facts = get_user_facts(user.id, db)
-            response = f"Since your goal is to {user_facts['goal']}, I recommend a high-protein diet and strength training."
-
+            response = (f"Since your goal is to {user_facts['goal']}, I recommend a high-protein diet and strength "
+                        f"training.")
 
         elif predicted_label == "workout_plan":
             response = "plan bitch."
@@ -56,8 +56,8 @@ def get_similar_response(user_input, user: User, db: Session):
             last_bot_message = get_last_bot_message(user.id, db)
             response = "ok"
             if last_bot_message and "meal" in last_bot_message.lower():
-                response = "Here’s a sample meal plan tailored for your goal. Let me know if you want a vegetarian or high-protein version!"
-
+                response = ("Here’s a sample meal plan tailored for your goal. Let me know if you want a vegetarian or "
+                            "high-protein version!")
 
         else:
             response = random.choice(responses_dict[predicted_label])
