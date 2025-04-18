@@ -66,4 +66,4 @@ def get_similar_response(user_input, user: User, conversation_id: int, db: Sessi
         response = "I'm not sure what you mean. Can you rephrase?"
 
     save_message(user.id, conversation_id, response, is_bot=True, db=db)
-    return response
+    return response, conversation_id
