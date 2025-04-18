@@ -91,3 +91,16 @@ async def refresh_token(
 @router.get("/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/logout")
+async def logout_user(response: Response):
+    # Clear the refresh token cookie
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=True,
+        samesite="none"
+    )
+
+    return {"message": "Successfully logged out"}
