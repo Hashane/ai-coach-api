@@ -21,3 +21,11 @@ class ChatMessage(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ChatConversation(BaseModel):
+    id: int
+    title: str
+
+    class Config:
+        orm_mode = True

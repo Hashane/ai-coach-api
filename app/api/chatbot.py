@@ -5,8 +5,8 @@ from app.auth.dependencies import get_current_user, get_session_local
 from app.auth.schemas import User
 from sqlalchemy.orm import Session
 from app.chatbot.engine import get_similar_response
-from app.chatbot.schemas import ChatResponse, ChatRequest, ChatMessage
-from app.db.models import Conversation, MessageHistory
+from app.chatbot.schemas import ChatResponse, ChatRequest, ChatMessage, ChatConversation
+from app.db.models import MessageHistory, Conversation
 
 router = APIRouter(
     prefix="/chatbot",
@@ -50,7 +50,7 @@ def get_conversation(conversation_id: int, db: Session = Depends(get_session_loc
     messages = (
         db.query(MessageHistory)
         .filter(MessageHistory.conversation_id == conversation_id)
-        .order_by(MessageHistory.timestamp.desc())
+        .order_by(MessageHistory.timestamp.asc())
         .all()
     )
 
@@ -64,3 +64,14 @@ def get_conversation(conversation_id: int, db: Session = Depends(get_session_loc
     ]
 
     return result
+
+
+@router.get("/conversations", response_model=List[ChatConversation])
+def list_conversations(db: Session = Depends(get_session_local),current_user: User = Depends(get_current_user)):
+    conversations = (
+        db.query(Conversation)
+        .filter(Conversation.user_id == current_user.id)
+        .order_by(Conversation.created_at.desc())
+        .all()
+    )
+    return conversations
