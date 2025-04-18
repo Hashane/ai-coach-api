@@ -14,5 +14,5 @@ router = APIRouter(
 @router.post("/chat", response_model=ChatResponse)
 def chat_endpoint(request: ChatRequest, current_user: User = Depends(get_current_user),
                   db: Session = Depends(get_session_local)):
-    reply = get_similar_response(request.text, current_user, db)
+    reply = get_similar_response(request.text, current_user, request.conversation_id, db)
     return ChatResponse(reply=reply)

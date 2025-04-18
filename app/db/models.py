@@ -46,8 +46,20 @@ class MessageHistory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    conversation_id = Column(Integer, ForeignKey("conversations.id"))
     message = Column(String(255), nullable=False)
     is_bot = Column(Boolean, default=False)
     timestamp = Column(DateTime, default=datetime.now())
 
     user = relationship("User", back_populates="messages")
+    conversation = relationship("Conversation", back_populates="messages")
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String(255), default="New Conversation")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    messages = relationship("MessageHistory", back_populates="conversation")

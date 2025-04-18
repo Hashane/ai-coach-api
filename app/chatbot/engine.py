@@ -27,8 +27,8 @@ with open("data/responses_dict.pkl", "rb") as f:
 sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
-def get_similar_response(user_input, user: User, db: Session):
-    save_message(user.id, user_input, is_bot=False, db=db)
+def get_similar_response(user_input, user: User, conversation_id: int, db: Session):
+    save_message(user.id, conversation_id, user_input, is_bot=False, db=db)
 
     facts = extract_user_facts(user_input)
     preferences = extract_user_preferences(user_input)
@@ -65,5 +65,5 @@ def get_similar_response(user_input, user: User, db: Session):
     else:
         response = "I'm not sure what you mean. Can you rephrase?"
 
-    save_message(user.id, response, is_bot=True, db=db)
+    save_message(user.id, conversation_id, response, is_bot=True, db=db)
     return response

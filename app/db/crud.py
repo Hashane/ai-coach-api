@@ -41,8 +41,9 @@ def get_user_facts(user_id: int, db: Session):
     return {fact.key: fact.value for fact in facts}
 
 
-def save_message(user_id: int, message: str, is_bot: bool, db: Session):
+def save_message(user_id: int, conversation_id: int, message: str, is_bot: bool, db: Session):
     new_message = MessageHistory(
+        conversation_id=conversation_id,
         user_id=user_id,
         message=message,
         is_bot=is_bot

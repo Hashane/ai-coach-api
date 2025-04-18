@@ -77,3 +77,7 @@ def extract_user_facts(message: str):
 
     # intermediate expert level Todo
     return facts
+
+
+def generate_title_from_message(message: str) -> str:
+    return message[:40] + "..." if len(message) > 40 else message
