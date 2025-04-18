@@ -59,13 +59,13 @@ async def refresh_token(
     - JSON body
     """
     # 1. Try cookie
-    refresh_token = request.cookies.get("refresh-Token")
+    refresh_token = request.cookies.get("refresh_token")
 
-    # 2. Try Authorization header //Todo decide if to remove since it may cause issues if access token is parsed from FE
-    if not refresh_token:
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            refresh_token = auth_header.split(" ")[1]
+    # # 2. Try Authorization header //Todo decide if to remove since it may cause issues if access token is parsed from FE
+    # if not refresh_token:
+    #     auth_header = request.headers.get("Authorization")
+    #     if auth_header and auth_header.startswith("Bearer "):
+    #         refresh_token = auth_header.split(" ")[1]
 
     # 3. Try JSON body
     if not refresh_token:
@@ -85,7 +85,7 @@ async def refresh_token(
         raise HTTPException(status_code=401, detail="User does not exist")
 
     # 6. Create new access token
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(data={"sub": user.username})
     return JSONResponse({"token": access_token, "email": user.email}, status_code=200)
 
 @router.get("/users/me", response_model=User)
