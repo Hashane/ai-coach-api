@@ -2,7 +2,14 @@ from fastapi import FastAPI
 from app.api import auth, chatbot
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.db import Base, engine
+from app.db import models
+
 app = FastAPI()
+@app.on_event("startup")
+def on_startup():
+    print("Creating tables...")
+    Base.metadata.create_all(bind=engine)
 
 origins = [
     "http://localhost:5173"

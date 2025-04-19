@@ -41,6 +41,37 @@ def get_user_facts(user_id: int, db: Session):
     return {fact.key: fact.value for fact in facts}
 
 
+def get_user_preferences(user_id: int, db: Session):
+    preferences = db.query(UserPreference).filter_by(user_id=user_id).all()
+    return {preference.category: preference.value for preference in preferences}
+
+
+def get_workout_preferences(user_id: int, db: Session) -> list[dict]:
+    """Retrieve all workout-related preferences with category, value, and sentiment"""
+    WORKOUT_CATEGORIES = {
+        'strength exercise',
+        'cardio exercise',
+        'fitness class',
+        'sports',
+        'workout',
+        'exercise'
+    }
+
+    preferences = db.query(UserPreference).filter(
+        UserPreference.user_id == user_id,
+        UserPreference.category.in_(WORKOUT_CATEGORIES)
+    ).all()
+
+    return [
+        {
+            "activity": pref.value,
+            "type": pref.category,
+            "preference": pref.sentiment
+        }
+        for pref in preferences
+    ]
+
+
 def save_message(user_id: int, conversation_id: int, message: str, is_bot: bool, db: Session):
     new_message = MessageHistory(
         conversation_id=conversation_id,

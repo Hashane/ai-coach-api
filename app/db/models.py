@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 
 from app.db.connection import Base
@@ -47,7 +47,7 @@ class MessageHistory(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     conversation_id = Column(Integer, ForeignKey("conversations.id"))
-    message = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
     is_bot = Column(Boolean, default=False)
     timestamp = Column(DateTime, default=datetime.now())
 

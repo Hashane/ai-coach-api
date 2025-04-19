@@ -1,9 +1,12 @@
+import string
 from typing import List
 
 import torch
 import spacy
 from transformers import pipeline
 import random
+import ast
+from typing import Union, List
 
 classifier = pipeline("zero-shot-classification")
 
@@ -132,3 +135,96 @@ def extract_user_facts(message: str):
 
 def generate_title_from_message(message: str) -> str:
     return message[:40] + "..." if len(message) > 40 else message
+
+
+def calculate_bmi(weight: float, height: float) -> float:
+    return weight / (height ** 2)
+
+
+def get_bmi_category(bmi: float) -> string:
+    bmi_category = (
+        "underweight" if bmi < 18.5 else
+        "normal" if bmi < 25 else
+        "overweight" if bmi < 30 else
+        "obese"
+    )
+    return bmi_category
+
+
+def get_recommendation(goal: str, bmi: float) -> str:
+    recommendations = {
+        "lose weight": {
+            "underweight": "a balanced diet with strength training to build healthy muscle",
+            "normal": "moderate calorie deficit with cardio and resistance training",
+            "overweight": "a calorie-controlled diet with regular cardio exercise",
+            "obese": "gradual weight loss through diet modification and low-impact exercise"
+        },
+        "gain muscle": {
+            "underweight": "calorie surplus with strength training 3-5x/week",
+            "normal": "slight calorie surplus with progressive overload training",
+            "overweight": "body recomposition approach with strength training",
+            "obese": "focus on strength training while maintaining slight calorie deficit"
+        }
+    }
+
+    bmi_category = get_bmi_category(bmi)
+
+    return recommendations.get(goal, {}).get(bmi_category, "regular exercise and balanced nutrition")
+
+
+def generate_workout_plan(
+        days: Union[str, List[str]],
+        goal: str,
+        experience: str = "beginner"
+) -> str:
+    """
+    Generates a workout plan for dynamic days input
+    - Handles both string and list inputs
+    - Returns formatted plan
+    """
+
+    workout_days = []
+
+    if isinstance(days, str):
+        try:
+            workout_days = ast.literal_eval(days)
+            if not isinstance(workout_days, list):
+                workout_days = days.split(',')
+        except:
+            workout_days = days.split(',')
+
+    # Ensure we have a clean list of days
+    workout_days = [day.strip(" []'\"") for day in workout_days if day.strip()]
+    if not workout_days:
+        workout_days = ["Monday", "Wednesday", "Friday"]  # Default
+
+    # 2. EXERCISE SELECTION
+    exercises = {
+        "build muscle": {
+            "beginner": ["Push-ups", "Dumbbell rows", "Bodyweight squats"],
+            "intermediate": ["Bench press", "Deadlifts", "Pull-ups"],
+            "advanced": ["Weighted pull-ups", "Barbell squats", "Overhead press"]
+        },
+        "lose fat": {
+            "beginner": ["Jumping jacks", "Bodyweight circuits", "Walking lunges"],
+            "intermediate": ["Kettlebell swings", "Box jumps", "Battle ropes"],
+            "advanced": ["Sprint intervals", "Complex lifts", "HIIT circuits"]
+        }
+    }
+
+    # Load appropriate exercises
+    goal = goal.lower()
+    workout_type = exercises.get(goal, exercises["build muscle"])
+    daily_exercises = workout_type.get(experience, workout_type["beginner"])
+
+    # 3. PLAN GENERATION
+    plan = []
+    for day in workout_days:
+        selected = random.sample(daily_exercises, min(3, len(daily_exercises)))
+        plan.append(f"{day.strip()}: {', '.join(selected)}")
+
+    return f"\n \n Your {len(workout_days)}-day '{goal}' plan:\n \n" + "\n".join(plan)
+
+
+def generate_meal_plan(dietary_restrictions: List[str], goal: str, meals_per_day: int = 3) -> str:
+   return ""
