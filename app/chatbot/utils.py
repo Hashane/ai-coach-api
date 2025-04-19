@@ -1,6 +1,9 @@
+from typing import List
+
 import torch
 import spacy
 from transformers import pipeline
+import random
 
 classifier = pipeline("zero-shot-classification")
 
@@ -10,34 +13,82 @@ def extract_user_preferences(message: str):
     results = []
 
     noise_words = {"lot", "something", "things", "thing", "time", "do"}
-    negative_phrases = ["don't like", "do not like", "hate", "dislike"]
-    positive_phrases = ["like", "love", "prefer"]
-    candidate_labels = ["food", "workout", "hobby", "entertainment", "lifestyle", "other"]
+    negative_phrases = ["don't like", "do not like", "hate", "dislike", "can't stand"]
+    positive_phrases = ["like", "love", "prefer", "enjoy"]
+    contrast_words = ["but", "however", "although", "except"]
 
-    def get_category(word):
-        result = classifier(word, candidate_labels=candidate_labels, multi_label=False)
-        return result["labels"][0] if result["labels"] else "other"
+    candidate_labels = [
+        "strength exercise",
+        "cardio exercise",
+        "fitness class",
+        "sports",
+        "food",
+        "other"
+    ]
+
+    def get_sentiment_clauses(sent):
+        """Split sentence into clauses with consistent sentiment"""
+        clauses = []
+        current_clause = []
+        current_sentiment = None
+
+        for token in sent:
+            # Detect sentiment change
+            token_text = token.text.lower()
+
+            if any(neg in token_text for neg in negative_phrases):
+                if current_clause and current_sentiment != "dislike":
+                    clauses.append((" ".join(current_clause), current_sentiment))
+                    current_clause = []
+                current_sentiment = "dislike"
+            elif any(pos in token_text for pos in positive_phrases):
+                if current_clause and current_sentiment != "like":
+                    clauses.append((" ".join(current_clause), current_sentiment))
+                    current_clause = []
+                current_sentiment = "like"
+            elif token.text.lower() in contrast_words:
+                if current_clause:
+                    clauses.append((" ".join(current_clause), current_sentiment))
+                current_clause = []
+                current_sentiment = None  # Reset for next clause
+
+            current_clause.append(token.text)
+
+        if current_clause:
+            clauses.append((" ".join(current_clause), current_sentiment))
+
+        return clauses
+
+    def process_clause(text, sentiment):
+        """Process individual clause"""
+        if not sentiment:
+            return []
+
+        clause_doc = nlp(text)
+        clause_results = []
+
+        for chunk in clause_doc.noun_chunks:
+            chunk_text = chunk.text.lower()
+            if (chunk.root.pos_ in ["NOUN", "PROPN"] and
+                    chunk_text not in noise_words and
+                    not any(phrase in chunk_text for phrase in positive_phrases + negative_phrases)):
+
+                category = classifier(chunk_text, candidate_labels, multi_label=False)["labels"][0]
+
+                if any(workout_term in category for workout_term in ["exercise", "equipment", "fitness"]):
+                    clause_results.append({
+                        "value": chunk_text,
+                        "sentiment": sentiment,
+                        "category": category,
+                        "type": "workout"
+                    })
+
+        return clause_results
 
     for sent in doc.sents:
-        sent_text = sent.text.lower()
-
-        sentiment = None
-        if any(neg in sent_text for neg in negative_phrases):
-            sentiment = "dislike"
-        elif any(pos in sent_text for pos in positive_phrases):
-            sentiment = "like"
-
-        if sentiment:
-            for token in sent:
-                if token.pos_ in ["NOUN", "PROPN", "VERB"]:
-                    lemma = token.lemma_.lower()
-                    if lemma not in noise_words and lemma not in positive_phrases + negative_phrases:
-                        category = get_category(lemma)
-                        results.append({
-                            "value": lemma,
-                            "sentiment": sentiment,
-                            "category": category
-                        })
+        clauses = get_sentiment_clauses(sent)
+        for clause_text, sentiment in clauses:
+            results.extend(process_clause(clause_text, sentiment))
 
     return results
 
