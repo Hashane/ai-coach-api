@@ -4,7 +4,7 @@ from fastapi import Depends, APIRouter
 from app.auth.dependencies import get_current_user, get_session_local
 from app.auth.schemas import User
 from sqlalchemy.orm import Session
-from app.chatbot.engine import get_similar_response
+from app.chatbot.engine import chatbot_instance
 from app.chatbot.schemas import ChatResponse, ChatRequest, ChatMessage, ChatConversation
 from app.chatbot.utils import generate_title_from_message
 from app.db.models import MessageHistory, Conversation
@@ -35,7 +35,7 @@ def chat_endpoint(
         conversation_id = new_convo.id
 
     # Get the bot's reply
-    reply, conversation_id = get_similar_response(
+    reply, conversation_id = chatbot_instance.get_similar_response(
         request.text, current_user, conversation_id, db
     )
 

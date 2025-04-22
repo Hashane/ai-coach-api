@@ -230,14 +230,6 @@ def check_if_user_data_exists(user_facts, include_workout_days: bool = False):
     return all(key in user_facts and user_facts[key] is not None for key in required_keys)
 
 
-def request_for_data():
-    prompt = (
-        "It looks like I don't have your height, weight, fitness goal, or gym days stored yet. \n"
-        "Please provide these details, and I'll store them to offer you customized solutions!"
-    )
-    return prompt
-
-
 def clean_wiki_text(text):
     text = re.sub(r'\[\d+\]', '', text)  #[70]
     text = re.sub(r'\{\{.*?\}\}', '', text)  # {{Infobox}}
@@ -259,3 +251,11 @@ def match_exercise(query: str, model, embeddings, lookup):
     matched_exercise = lookup[top_idx]
 
     return matched_exercise, scores[top_idx]
+
+
+def request_for_data():
+    prompt = (
+        "It looks like I don't have your height, weight, fitness goal, or gym days stored yet. \n"
+        "Please provide these details, and I'll store them to offer you customized solutions!"
+    )
+    return prompt
