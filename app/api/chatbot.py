@@ -6,6 +6,7 @@ from app.auth.schemas import User
 from sqlalchemy.orm import Session
 from app.chatbot.engine import get_similar_response
 from app.chatbot.schemas import ChatResponse, ChatRequest, ChatMessage, ChatConversation
+from app.chatbot.utils import generate_title_from_message
 from app.db.models import MessageHistory, Conversation
 
 router = APIRouter(
@@ -26,7 +27,7 @@ def chat_endpoint(
     if not conversation_id:
         new_convo = Conversation(
             user_id=current_user.id,
-            title=request.text[:30]
+            title= generate_title_from_message(request.text)
         )
         db.add(new_convo)
         db.commit()
