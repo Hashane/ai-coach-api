@@ -8,13 +8,16 @@ import random
 import ast
 from typing import Union, List
 
-classifier = pipeline("zero-shot-classification")
+import spacy
+import re
+from transformers import pipeline
+
+# Load once globally
+nlp = spacy.load("en_core_web_sm")
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 
 def extract_user_preferences(message: str):
-    doc = nlp(message)
-    results = []
-
     noise_words = {"lot", "something", "things", "thing", "time", "do"}
     negative_phrases = ["don't like", "do not like", "hate", "dislike", "can't stand"]
     positive_phrases = ["like", "love", "prefer", "enjoy"]
@@ -29,107 +32,100 @@ def extract_user_preferences(message: str):
         "other"
     ]
 
-    def get_sentiment_clauses(sent):
-        """Split sentence into clauses with consistent sentiment"""
-        clauses = []
-        current_clause = []
-        current_sentiment = None
+    def detect_sentiment(clause):
+        text = clause.lower()
+        for phrase in negative_phrases:
+            if phrase in text:
+                return "dislike"
+        for phrase in positive_phrases:
+            if phrase in text:
+                return "like"
+        return None
 
-        for token in sent:
-            # Detect sentiment change
-            token_text = token.text.lower()
+    def clean_text(text):
+        return re.sub(r"[^\w\s]", "", text).strip().lower()
 
-            if any(neg in token_text for neg in negative_phrases):
-                if current_clause and current_sentiment != "dislike":
-                    clauses.append((" ".join(current_clause), current_sentiment))
-                    current_clause = []
-                current_sentiment = "dislike"
-            elif any(pos in token_text for pos in positive_phrases):
-                if current_clause and current_sentiment != "like":
-                    clauses.append((" ".join(current_clause), current_sentiment))
-                    current_clause = []
-                current_sentiment = "like"
-            elif token.text.lower() in contrast_words:
-                if current_clause:
-                    clauses.append((" ".join(current_clause), current_sentiment))
-                current_clause = []
-                current_sentiment = None  # Reset for next clause
+    def process_clause(clause, sentiment):
+        doc = nlp(clause)
+        results = []
 
-            current_clause.append(token.text)
+        for chunk in doc.noun_chunks:
+            chunk_text = clean_text(chunk.text)
+            if (
+                    chunk.root.pos_ in ["NOUN", "PROPN"]
+                    and chunk_text not in noise_words
+                    and not any(phrase in chunk_text for phrase in positive_phrases + negative_phrases)
+            ):
+                classification = classifier(chunk_text, candidate_labels, multi_label=False)
+                category = classification["labels"][0]
 
-        if current_clause:
-            clauses.append((" ".join(current_clause), current_sentiment))
+                results.append({
+                    "value": chunk_text,
+                    "sentiment": sentiment,
+                    "category": category,
+                    "type": "workout" if "exercise" in category or "fitness" in category or "sports" in category else "food"
+                })
 
-        return clauses
+        return results
 
-    def process_clause(text, sentiment):
-        """Process individual clause"""
-        if not sentiment:
-            return []
+    results = []
 
-        clause_doc = nlp(text)
-        clause_results = []
+    # Split on contrast words to isolate sentiment clauses
+    contrast_split = re.split(rf"\b({'|'.join(contrast_words)})\b", message, flags=re.IGNORECASE)
 
-        for chunk in clause_doc.noun_chunks:
-            chunk_text = chunk.text.lower()
-            if (chunk.root.pos_ in ["NOUN", "PROPN"] and
-                    chunk_text not in noise_words and
-                    not any(phrase in chunk_text for phrase in positive_phrases + negative_phrases)):
+    # Combine into meaningful clauses
+    clauses = []
+    current_clause = ""
+    for segment in contrast_split:
+        if segment.strip().lower() in contrast_words:
+            if current_clause:
+                clauses.append(current_clause.strip())
+            current_clause = ""
+        else:
+            current_clause += " " + segment
+    if current_clause:
+        clauses.append(current_clause.strip())
 
-                category = classifier(chunk_text, candidate_labels, multi_label=False)["labels"][0]
-
-                if any(workout_term in category for workout_term in ["exercise", "equipment", "fitness"]):
-                    clause_results.append({
-                        "value": chunk_text,
-                        "sentiment": sentiment,
-                        "category": category,
-                        "type": "workout"
-                    })
-
-        return clause_results
-
-    for sent in doc.sents:
-        clauses = get_sentiment_clauses(sent)
-        for clause_text, sentiment in clauses:
-            results.extend(process_clause(clause_text, sentiment))
+    # Analyze each clause
+    for clause in clauses:
+        sentiment = detect_sentiment(clause)
+        if sentiment:
+            results.extend(process_clause(clause, sentiment))
 
     return results
-
-
-def mean_pooling(model_output, attention_mask):
-    token_embeddings = model_output[0]
-    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    return torch.sum(token_embeddings * input_mask_expanded, 1) / \
-        torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-
-
-nlp = spacy.load("en_core_web_sm")
 
 
 def extract_user_facts(message: str):
     doc = nlp(message)
     facts = {}
 
-    for ent in doc.ents:
-        if ent.label_ == "QUANTITY" or ent.label_ == "CARDINAL":
-            if "cm" in ent.text or "centimeter" in ent.text:
-                facts["height"] = ent.text
-            elif "kg" in ent.text or "kilogram" in ent.text:
-                facts["weight"] = ent.text
+    text = message.lower()
 
-    if "goal" in message.lower():
-        for sent in doc.sents:
-            if "goal" in sent.text.lower():
-                facts["goal"] = sent.text.split("is")[-1].strip(". ")
+    weight_match = re.search(r"(?:\bweight is\b|\bi weigh\b|\bweigh\b|weight:)?\s*(\d{2,3})\s*(?:kg|kilograms)\b", text)
+    if weight_match:
+        weight = int(weight_match.group(1))
+        if 30 <= weight <= 200:
+            facts["weight"] = weight
+
+    height_match = re.search(r"(?:\bheight is\b|\bi am\b|\bi'm\b)?\s*(\d{3})\s*(?:cm|centimeters)\b", text)
+    if height_match:
+        height = int(height_match.group(1))
+        if 100 <= height <= 250:
+            facts["height"] = height
+
+    for sent in doc.sents:
+        if "goal" in sent.text.lower():
+            match = re.search(r"goal(?: is|:)?\s*(.+)", sent.text, re.IGNORECASE)
+            if match:
+                facts["goal"] = match.group(1).strip(". ")
 
     days = []
     for token in doc:
         if token.text.lower() in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]:
-            days.append(token.text)
+            days.append(token.text.capitalize())
     if days:
         facts["gym_days"] = days
 
-    # intermediate expert level Todo
     return facts
 
 
@@ -226,5 +222,31 @@ def generate_workout_plan(
     return f"\n \n Your {len(workout_days)}-day '{goal}' plan:\n \n" + "\n".join(plan)
 
 
-def generate_meal_plan(dietary_restrictions: List[str], goal: str, meals_per_day: int = 3) -> str:
-   return ""
+def check_if_user_data_exists(user_facts):
+    if not user_facts.get('height') or not user_facts.get('weight') or not user_facts.get('goal') or not user_facts.get(
+            'gym_days'):
+        return False
+    else:
+        return True
+
+
+def request_for_data():
+    prompt = (
+        "It looks like I don't have your height, weight, fitness goal, or gym days stored yet. \n"
+        "Please provide these details, and I'll store them to offer you customized solutions!"
+    )
+    return prompt
+
+
+def clean_wiki_text(text):
+    text = re.sub(r'\[\d+\]', '', text)  #[70]
+    text = re.sub(r'\{\{.*?\}\}', '', text)  # {{Infobox}}
+    text = re.sub(r'\[\[.*?\]\]', '', text)  # [[Link]]
+
+    text = re.sub(r'\[ edit ]','',text)
+    # HTML tags
+    text = re.sub(r'<.*?>', '', text)
+    # Extra whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    return text
