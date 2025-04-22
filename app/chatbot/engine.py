@@ -8,7 +8,7 @@ import os
 import json
 
 from app.chatbot.utils import extract_user_facts, extract_user_preferences, generate_workout_plan, \
-    get_recommendation, calculate_bmi, get_bmi_category, request_for_data, check_if_user_data_exists
+    get_recommendation, calculate_bmi, get_bmi_category, request_for_data, check_if_user_data_exists, match_exercise
 from app.db.crud import get_user_facts, save_user_facts, save_user_preferences, save_message, get_last_bot_message, \
     get_user_preferences, get_workout_preferences
 from app.db.models import User
@@ -25,6 +25,15 @@ with open("data/label_encoder.pkl", "rb") as f:
 
 with open("data/responses_dict.pkl", "rb") as f:
     responses_dict = pickle.load(f)
+
+with open("data/exercise_sentences.json", "r") as f:
+    exercise_sentences = json.load(f)
+
+with open("data/exercise_embeddings.pkl", "rb") as f:
+    exercise_embeddings = pickle.load(f)
+
+with open("data/exercise_lookup.pkl", "rb") as f:
+    exercise_lookup = pickle.load(f)
 
 # Load SBERT model
 sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -114,7 +123,6 @@ def get_similar_response(user_input, user: User, conversation_id: int, db: Sessi
             else:
                 response = request_for_data()
 
-
         elif predicted_label == "workout_plan":
 
             liked_workouts = [
@@ -122,7 +130,7 @@ def get_similar_response(user_input, user: User, conversation_id: int, db: Sessi
                 for pref in workout_prefs
                 if pref['preference'] == 'like'
             ]
-            if check_if_user_data_exists(user_facts):
+            if check_if_user_data_exists(user_facts, True):
                 plan = generate_workout_plan(
                     user_facts['gym_days'],
                     user_facts['goal']
@@ -136,46 +144,46 @@ def get_similar_response(user_input, user: User, conversation_id: int, db: Sessi
             else:
                 response = request_for_data()
 
-        # elif predicted_label == "agree":
-        #     last_bot_message = get_last_bot_message(user.id, db)
-        #     if last_bot_message and "meal" in last_bot_message.lower():
-        #         meal_plan = generate_meal_plan(
-        #             user_prefs.get('dietary_restrictions', []),
-        #             user_facts['goal']
-        #         )
-        #         response = random.choice(response_templates["diet"]).format(
-        #             goal=user_facts['goal'],
-        #             diet_prefs=", ".join(user_prefs.get('dietary_restrictions', ["no restrictions"])),
-        #             meal_ideas=meal_plan
-        #         )
-        #     else:
-        #         response = "Great! What else can I help you with?"
-
         else:
             # Fallback to generic responses with personalization
             generic_response = random.choice(responses_dict[predicted_label])
             response = f"{user_facts.get('name', 'There')}, {generic_response.lower()}"
 
     else:
-        # Try semantic search fallback if confidence is low
-        with open("data/kb_sentences.json", "r") as f:
-            kb_sentences = json.load(f)
+        matched_exercise, score = match_exercise(user_input, sbert_model, exercise_embeddings, exercise_lookup)
 
-        with open("data/kb_embeddings.pkl", "rb") as f:
-            kb_embeddings = pickle.load(f)
-
-        # Encode user input
-        query_embedding = sbert_model.encode([user_input])[0].reshape(1, -1)
-        similarities = cosine_similarity(query_embedding, kb_embeddings)[0]
-        top_idx = np.argmax(similarities)
-
-        if similarities[top_idx] > 0.4:
-            response = f"Here’s what I found: {kb_sentences[top_idx]}"
+        if score > 0.6:
+            if any(phrase in user_input.lower() for phrase in
+                   ["muscle", "which muscle", "target muscle", "muscles targeted", "works on which muscles",
+                    "muscle group", "focuses on which muscles", "muscle groups involved", "primary muscles"]):
+                response = f"The exercise focuses on the following muscles: {', '.join(matched_exercise['primaryMuscles'])}."
+            elif any(phrase in user_input.lower() for phrase in ["instruction", "how to perform", "how to do", "steps for", "guide for", "how do i", "instructions for", "can you explain how to"]):
+                response = f"Here are the instructions for the exercise: \n" + "\n".join(
+                    matched_exercise['instructions'])
+            else:
+                response = (
+                        f"**{matched_exercise['name']}** targets your **{', '.join(matched_exercise['primaryMuscles'])}**.\n"
+                        f"Here's how to do it:\n" +
+                        "\n".join([f"{i + 1}. {step}" for i, step in enumerate(matched_exercise['instructions'])])
+                )
         else:
-            response = "I'm not sure I understand. Could you please rephrase?"
+            with open("data/wiki_sentences.json", "r") as f:
+                wiki_sentences = json.load(f)
 
-        # else:
-        #     response = "Sorry, Can you rephrase that please?"
+            with open("data/wiki_embeddings.pkl", "rb") as f:
+                wiki_embeddings = pickle.load(f)
+
+            query_embedding = sbert_model.encode([user_input])[0].reshape(1, -1)
+            similarities = cosine_similarity(query_embedding, wiki_embeddings)[0]
+            top_idx = np.argmax(similarities)
+
+            if similarities[top_idx] > 0.4:
+                response = f"Here’s what I found: {wiki_sentences[top_idx]}"
+            else:
+                response = random.choice(responses_dict.get(predicted_label, ["I'm not sure how to respond."]))
+
+        save_message(user.id, conversation_id, response, is_bot=True, db=db)
+        return response, conversation_id
 
     save_message(user.id, conversation_id, response, is_bot=True, db=db)
     return response, conversation_id

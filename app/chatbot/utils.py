@@ -1,9 +1,6 @@
 import string
-from typing import List
-
-import torch
-import spacy
-from transformers import pipeline
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 import random
 import ast
 from typing import Union, List
@@ -24,7 +21,7 @@ def extract_user_preferences(message: str):
     contrast_words = ["but", "however", "although", "except"]
 
     candidate_labels = [
-        "strength exercise",
+        "exercise",
         "cardio exercise",
         "fitness class",
         "sports",
@@ -101,13 +98,15 @@ def extract_user_facts(message: str):
 
     text = message.lower()
 
-    weight_match = re.search(r"(?:\bweight is\b|\bi weigh\b|\bweigh\b|weight:)?\s*(\d{2,3})\s*(?:kg|kilograms)\b", text)
+    weight_match = re.search(
+        r"(?:\bweight is\b|\bi weigh\b|\bweigh\b|weight:)?\s*(\d{2,3})\s*(?:kg|kilograms)\b", text)
     if weight_match:
         weight = int(weight_match.group(1))
         if 30 <= weight <= 200:
             facts["weight"] = weight
 
-    height_match = re.search(r"(?:\bheight is\b|\bi am\b|\bi'm\b)?\s*(\d{3})\s*(?:cm|centimeters)\b", text)
+    height_match = re.search(
+        r"(?:\bheight\b\s*(?:is|:)?|\bi am\b|\bi'm\b)?\s*(\d{3})\s*(?:cm|centimeters)\b", text, re.IGNORECASE)
     if height_match:
         height = int(height_match.group(1))
         if 100 <= height <= 250:
@@ -222,12 +221,13 @@ def generate_workout_plan(
     return f"\n \n Your {len(workout_days)}-day '{goal}' plan:\n \n" + "\n".join(plan)
 
 
-def check_if_user_data_exists(user_facts):
-    if not user_facts.get('height') or not user_facts.get('weight') or not user_facts.get('goal') or not user_facts.get(
-            'gym_days'):
-        return False
-    else:
-        return True
+def check_if_user_data_exists(user_facts, include_workout_days: bool = False):
+    required_keys = ['weight', 'height', 'goal']
+
+    if include_workout_days:
+        required_keys.append('gym_days')
+
+    return all(key in user_facts and user_facts[key] is not None for key in required_keys)
 
 
 def request_for_data():
@@ -250,3 +250,12 @@ def clean_wiki_text(text):
     text = re.sub(r'\s+', ' ', text).strip()
 
     return text
+
+
+def match_exercise(query: str, model, embeddings, lookup):
+    query_embedding = model.encode([query])[0].reshape(1, -1)
+    scores = cosine_similarity(query_embedding, embeddings)[0]
+    top_idx = np.argmax(scores)
+    matched_exercise = lookup[top_idx]
+
+    return matched_exercise, scores[top_idx]
