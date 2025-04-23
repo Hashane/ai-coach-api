@@ -133,6 +133,7 @@ def generate_title_from_message(message: str) -> str:
 
 
 def calculate_bmi(weight: float, height: float) -> float:
+    height = height / 100
     return weight / (height ** 2)
 
 
@@ -235,7 +236,7 @@ def clean_wiki_text(text):
     text = re.sub(r'\{\{.*?\}\}', '', text)  # {{Infobox}}
     text = re.sub(r'\[\[.*?\]\]', '', text)  # [[Link]]
 
-    text = re.sub(r'\[ edit ]','',text)
+    text = re.sub(r'\[ edit ]', '', text)
     # HTML tags
     text = re.sub(r'<.*?>', '', text)
     # Extra whitespace
