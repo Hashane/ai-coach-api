@@ -46,8 +46,11 @@ def extract_user_preferences(message: str):
         doc = nlp(clause)
         results = []
 
+        # Handle noun chunks
+        seen = set()
         for chunk in doc.noun_chunks:
             chunk_text = clean_text(chunk.text)
+            seen.add(chunk_text)
             if (
                     chunk.root.pos_ in ["NOUN", "PROPN"]
                     and chunk_text not in noise_words
@@ -62,6 +65,25 @@ def extract_user_preferences(message: str):
                     "category": category,
                     "type": "workout" if "exercise" in category or "fitness" in category or "sports" in category else "food"
                 })
+
+        # Handle verbs (including gerunds like "running") separately
+        for token in doc:
+            if (
+                    token.pos_ == "VERB"
+                    and token.lemma_ not in seen
+                    and token.text.lower() not in noise_words
+                    and not any(phrase in token.text.lower()  for phrase in positive_phrases + negative_phrases)
+            ):
+                token_text = clean_text(token.text)
+                if token_text and token_text not in seen:
+                    classification = classifier(token_text, candidate_labels, multi_label=False)
+                    category = classification["labels"][0]
+                    results.append({
+                        "value": token_text,
+                        "sentiment": sentiment,
+                        "category": category,
+                        "type": "workout" if "exercise" in category or "fitness" in category or "sports" in category else "food"
+                    })
 
         return results
 
