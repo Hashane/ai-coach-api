@@ -1,4 +1,4 @@
-from datetime import datetime
+from sqlalchemy.sql import func
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 
@@ -23,7 +23,7 @@ class UserFact(Base):
     __tablename__ = "user_facts"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     key = Column(String(50))
     value = Column(String(50))
 
@@ -33,7 +33,7 @@ class UserFact(Base):
 class UserPreference(Base):
     __tablename__ = "user_preferences"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     category = Column(String(50))
     value = Column(String(50))
     sentiment = Column(String(10))
@@ -45,11 +45,12 @@ class MessageHistory(Base):
     __tablename__ = "message_history"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     conversation_id = Column(Integer, ForeignKey("conversations.id"))
     message = Column(Text, nullable=False)
     is_bot = Column(Boolean, default=False)
-    timestamp = Column(DateTime, default=datetime.now())
+    timestamp = Column(DateTime, server_default=func.now())
+
 
     user = relationship("User", back_populates="messages")
     conversation = relationship("Conversation", back_populates="messages")
@@ -58,8 +59,8 @@ class Conversation(Base):
     __tablename__ = "conversations"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String(255), default="New Conversation")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
 
     messages = relationship("MessageHistory", back_populates="conversation")
