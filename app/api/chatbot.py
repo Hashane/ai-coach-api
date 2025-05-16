@@ -6,6 +6,7 @@ from app.auth.schemas import User
 from sqlalchemy.orm import Session
 from app.chatbot.engine import chatbot_instance
 from app.chatbot.schemas import ChatResponse, ChatRequest, ChatMessage, ChatConversation
+from app.chatbot.trainer import ChatbotTrainer, initialize_knowledge_bases
 from app.chatbot.utils import generate_title_from_message
 from app.db.models import MessageHistory, Conversation
 
@@ -76,3 +77,10 @@ def list_conversations(db: Session = Depends(get_session_local),current_user: Us
         .all()
     )
     return conversations
+
+
+@router.get("/train")
+def train(User = Depends(get_current_user)):
+    trainer = ChatbotTrainer()
+    trainer.initialize_from_json("data/data.json")
+    initialize_knowledge_bases()

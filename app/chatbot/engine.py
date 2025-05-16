@@ -8,6 +8,7 @@ import os
 import json
 
 from typing import Dict, List, Tuple, Any
+
 from app.chatbot.utils import extract_user_facts, extract_user_preferences, generate_workout_plan, \
     get_recommendation, calculate_bmi, get_bmi_category, request_for_data, check_if_user_data_exists, match_exercise
 from app.db.crud import get_user_facts, save_user_facts, save_user_preferences, save_message, get_workout_preferences
@@ -16,9 +17,11 @@ from sqlalchemy.orm import Session
 
 
 class ChatbotResources:
+
     def __init__(self):
         self.sbert_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.X = None
+        self.y = None
         self.label_encoder = None
         self.responses_dict = None
         self.exercise_sentences = None
@@ -29,6 +32,9 @@ class ChatbotResources:
 
     def load_resources(self):
         os.chdir('app/chatbot')
+
+        with open("data/y_labels.pkl", "rb") as f:
+            self.y = pickle.load(f)
 
         # Load trained SBERT embeddings, label encoder, and responses
         with open("data/sbert_embeddings.pkl", "rb") as f:
@@ -120,6 +126,83 @@ class ResponseGenerator:
             plan=plan
         )
 
+    # def teach_new_intent(self, pattern: str, response: str, tag: str):
+    #     """Add new intent at runtime"""
+    #     # Encode new pattern
+    #     new_embedding = self.resources.sbert_model.encode([pattern.lower()])[0]
+    #
+    #     # Handle new tag case
+    #     if tag not in self.resources.label_encoder.classes_:
+    #         # Update label encoder
+    #         old_classes = list(self.resources.label_encoder.classes_)
+    #         old_classes.append(tag)
+    #         self.resources.label_encoder.fit(old_classes)
+    #
+    #         # # Add new embedding and label
+    #         # if self.resources.X is None:
+    #         #     self.resources.X = new_embedding.reshape(1, -1)
+    #         # else:
+    #         #     self.resources.X = np.vstack([self.resources.X, new_embedding])
+    #
+    #         if self.resources.X is None:
+    #             self.resources.X = new_embedding.reshape(1, -1)
+    #             self.resources.y_labels = [tag]
+    #         else:
+    #             self.resources.X = np.vstack([self.resources.X, new_embedding])
+    #             self.resources.y_labels.append(tag)
+    #
+    #         # Update responses dictionary
+    #         self.resources.responses_dict[tag] = [response]
+    #     else:
+    #         # Update existing intent - average with existing embeddings
+    #         tag_id = self.resources.label_encoder.transform([tag])[0]
+    #         idx = np.where(self.resources.label_encoder.transform(
+    #             self.resources.label_encoder.classes_) == tag_id)[0][0]
+    #
+    #         # Update embedding (average with existing)
+    #         self.resources.X[idx] = np.mean([self.resources.X[idx], new_embedding], axis=0)
+    #         self.resources.responses_dict[tag].append(response)
+    #
+    #     # Save updated resources
+    #     self._save_resources()
+    #     return f"Learned new pattern for '{tag}'"
+    def teach_new_intent(self, pattern: str, response: str, tag: str):
+        new_embedding = self.resources.sbert_model.encode([pattern.lower()])[0]
+        new_embedding /= np.linalg.norm(new_embedding)
+
+        # Append new tag if not exists
+        if tag not in self.resources.responses_dict:
+            self.resources.responses_dict[tag] = [response]
+        else:
+            self.resources.responses_dict[tag].append(response)
+
+        if self.resources.X is None:
+            self.resources.X = new_embedding.reshape(1, -1)
+            self.resources.y = np.array([tag])
+        else:
+            self.resources.X = np.vstack([self.resources.X, new_embedding])
+            self.resources.y = np.append(self.resources.y, tag)
+
+        # Update label encoder without re-fitting
+        if tag not in self.resources.label_encoder.classes_:
+            current_classes = list(self.resources.label_encoder.classes_)
+            self.resources.label_encoder.classes_ = np.array(current_classes + [tag])
+
+        self._save_resources()
+        return f"Learned intent '{tag}'"
+
+    def _save_resources(self):
+        """Save all resources ensuring consistency"""
+        with open("data/sbert_embeddings.pkl", "wb") as f:
+            pickle.dump(self.resources.X, f)
+        with open("data/intent_labels.pkl", "wb") as f:
+            pickle.dump(self.resources.y, f)
+        with open("data/label_encoder.pkl", "wb") as f:
+            pickle.dump(self.resources.label_encoder, f)
+        with open("data/responses_dict.pkl", "wb") as f:
+            pickle.dump(self.resources.responses_dict, f)
+
+
     def generate_exercise_response(self, user_input: str) -> str:
         matched_exercise, score = match_exercise(
             user_input,
@@ -128,7 +211,7 @@ class ResponseGenerator:
             self.resources.exercise_lookup
         )
 
-        if score <= 0.6:
+        if score <= 0.82:
             return self.generate_wiki_response(user_input)
 
         if any(phrase in user_input.lower() for phrase in
@@ -156,7 +239,7 @@ class ResponseGenerator:
         if similarities[top_idx] > 0.4:
             return f"Here’s what I found: {self.resources.wiki_sentences[top_idx]}"
 
-        return random.choice(self.resources.responses_dict.get("default", ["I'm not sure how to respond."]))
+        return f"I'm not sure how to respond. You can teach me using:\nteach: {user_input} | your_label | your custom response"
 
 
 class FitnessChatbot:
@@ -167,9 +250,38 @@ class FitnessChatbot:
         self.resources.load_resources()
         self.response_generator = ResponseGenerator(self.resources)
 
+    def teaching_process(self, user_input: str, user: User, conversation_id: int, db: Session):
+        try:
+            # Format: teach:query|intent|response
+            _, data = user_input.split("teach:", 1)
+            parts = [x.strip() for x in data.split("|", 2)]  # Split on first two | only
+
+            if len(parts) != 3:
+                raise ValueError("Need exactly 3 parts separated by |")
+
+            query, intent_label, response_text = parts
+
+            # Validate label
+            if not intent_label or intent_label.isdigit():
+                raise ValueError("Intent label must be non-empty text")
+
+            # Teach and get confirmation
+            result = self.response_generator.teach_new_intent(query, response_text, intent_label)
+            response = f"✅ {result}"
+
+        except ValueError as e:
+            response = f"❌ Invalid format: {str(e)}\nUse: teach:query | intent | response"
+        except Exception as e:
+            response = f"❌ Failed to learn: {str(e)}"
+
+        return self._finalize_response(user.id, conversation_id, response, db)
+
     def get_similar_response(self, user_input: str, user: User, conversation_id: int, db: Session) -> Tuple[str, int]:
         self._save_user_message(user.id, conversation_id, user_input, db)
 
+        # Handle teaching command first
+        if user_input.lower().startswith("teach:"):
+            return self.teaching_process(user_input, user, conversation_id, db)
         # Extract and save preferences if any
         preferences = extract_user_preferences(user_input)
         if preferences:
@@ -197,6 +309,8 @@ class FitnessChatbot:
         confidence = similarities[best_match_index]
         predicted_label = self.resources.label_encoder.classes_[best_match_index]
 
+        print(predicted_label)
+
         if confidence > 0.6:
             if predicted_label == "bmi":
                 response = self.response_generator.generate_bmi_response(user_facts)
@@ -206,10 +320,12 @@ class FitnessChatbot:
 
             else:
                 # Fallback
+                print(predicted_label)
                 generic_response = random.choice(self.resources.responses_dict[predicted_label])
                 response = f"{user_facts.get('name', 'There')}, {generic_response.lower()}"
 
         else:
+            print(predicted_label)
             response = self.response_generator.generate_exercise_response(user_input)
 
         self._finalize_response(user.id, conversation_id, response, db)
