@@ -126,46 +126,6 @@ class ResponseGenerator:
             plan=plan
         )
 
-    # def teach_new_intent(self, pattern: str, response: str, tag: str):
-    #     """Add new intent at runtime"""
-    #     # Encode new pattern
-    #     new_embedding = self.resources.sbert_model.encode([pattern.lower()])[0]
-    #
-    #     # Handle new tag case
-    #     if tag not in self.resources.label_encoder.classes_:
-    #         # Update label encoder
-    #         old_classes = list(self.resources.label_encoder.classes_)
-    #         old_classes.append(tag)
-    #         self.resources.label_encoder.fit(old_classes)
-    #
-    #         # # Add new embedding and label
-    #         # if self.resources.X is None:
-    #         #     self.resources.X = new_embedding.reshape(1, -1)
-    #         # else:
-    #         #     self.resources.X = np.vstack([self.resources.X, new_embedding])
-    #
-    #         if self.resources.X is None:
-    #             self.resources.X = new_embedding.reshape(1, -1)
-    #             self.resources.y_labels = [tag]
-    #         else:
-    #             self.resources.X = np.vstack([self.resources.X, new_embedding])
-    #             self.resources.y_labels.append(tag)
-    #
-    #         # Update responses dictionary
-    #         self.resources.responses_dict[tag] = [response]
-    #     else:
-    #         # Update existing intent - average with existing embeddings
-    #         tag_id = self.resources.label_encoder.transform([tag])[0]
-    #         idx = np.where(self.resources.label_encoder.transform(
-    #             self.resources.label_encoder.classes_) == tag_id)[0][0]
-    #
-    #         # Update embedding (average with existing)
-    #         self.resources.X[idx] = np.mean([self.resources.X[idx], new_embedding], axis=0)
-    #         self.resources.responses_dict[tag].append(response)
-    #
-    #     # Save updated resources
-    #     self._save_resources()
-    #     return f"Learned new pattern for '{tag}'"
     def teach_new_intent(self, pattern: str, response: str, tag: str):
         new_embedding = self.resources.sbert_model.encode([pattern.lower()])[0]
         new_embedding /= np.linalg.norm(new_embedding)
