@@ -171,7 +171,7 @@ class ResponseGenerator:
             self.resources.exercise_lookup
         )
 
-        if score <= 0.82:
+        if score <= 0.6:
             return self.generate_wiki_response(user_input)
 
         if any(phrase in user_input.lower() for phrase in
