@@ -189,7 +189,7 @@ class ResponseGenerator:
             self.resources.label_encoder.classes_ = np.array(current_classes + [tag])
 
         self._save_resources()
-        return f"Learned intent '{tag}'"
+        return f"🎉 Got it! I've added this to my knowledge about '{tag}'."
 
     def _save_resources(self):
         """Save all resources ensuring consistency"""
@@ -239,7 +239,7 @@ class ResponseGenerator:
         if similarities[top_idx] > 0.4:
             return f"Here’s what I found: {self.resources.wiki_sentences[top_idx]}"
 
-        return f"I'm not sure how to respond. You can teach me using:\nteach: {user_input} | your_label | your custom response"
+        return f"I'm not sure how to respond. You can teach me using this pattern:\nteach: {user_input} | your_label | your custom response"
 
 
 class FitnessChatbot:
@@ -266,8 +266,8 @@ class FitnessChatbot:
                 raise ValueError("Intent label must be non-empty text")
 
             # Teach and get confirmation
-            result = self.response_generator.teach_new_intent(query, response_text, intent_label)
-            response = f"✅ {result}"
+            response = self.response_generator.teach_new_intent(query, response_text, intent_label)
+
 
         except ValueError as e:
             response = f"❌ Invalid format: {str(e)}\nUse: teach:query | intent | response"
@@ -322,7 +322,7 @@ class FitnessChatbot:
                 # Fallback
                 print(predicted_label)
                 generic_response = random.choice(self.resources.responses_dict[predicted_label])
-                response = f"{user_facts.get('name', 'There')}, {generic_response.lower()}"
+                response = generic_response.lower().rstrip('.')
 
         else:
             print(predicted_label)
