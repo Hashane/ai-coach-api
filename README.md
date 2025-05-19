@@ -3,7 +3,7 @@
 A smart, personalized fitness chatbot built using **FastAPI** and **SBERT** (Sentence-BERT). It provides users with accurate workout plans, dietary suggestions, and fitness advice through a **hybrid NLP + rule-based system**.
 
 ---
-API Endpoints
+### API Endpoints
 <img width="676" alt="image" src="https://github.com/user-attachments/assets/e324784d-a618-4fc2-8709-109923bf1686" />
 
 ## 🚀 Features
