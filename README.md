@@ -1,4 +1,4 @@
-<img width="676" alt="image" src="https://github.com/user-attachments/assets/b2acf823-aee8-4cd6-897e-197a9a113264" /># 🧠 AI Fitness Coach Chatbot (FastAPI + SBERT)
+# 🧠 AI Fitness Coach Chatbot (FastAPI + SBERT)
 
 A smart, personalized fitness chatbot built using **FastAPI** and **SBERT** (Sentence-BERT). It provides users with accurate workout plans, dietary suggestions, and fitness advice through a **hybrid NLP + rule-based system**.
 
